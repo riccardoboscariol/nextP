@@ -2,3 +2,4 @@
 streamlit==1.10.0
 gspread==5.4.0
 oauth2client==4.1.3
+altair==4.2.2  # Aggiungi questa linea
