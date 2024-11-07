@@ -80,20 +80,18 @@ def main():
     st.title("Test di Valutazione delle Frasi")
 
     # Input per l'ID partecipante e l'email
-    participant_id = st.text_input("Inserisci il tuo ID partecipante", key="participant_id")
-    email = st.text_input("Inserisci la tua email", key="email")
+    participant_id = st.text_input("Inserisci il tuo ID partecipante")
+    email = st.text_input("Inserisci la tua email")
 
     if participant_id and email and st.button("Inizia il Test"):
         # Imposta le variabili session_state per iniziare il test
-        if "all_phrases" not in st.session_state:
-            all_phrases = target_phrases + control_phrases + test_phrases
-            random.shuffle(all_phrases)
-            st.session_state.all_phrases = all_phrases
-            st.session_state.current_index = 0
-            st.session_state.total_correct = 0
-            st.session_state.participant_id = participant_id
-            st.session_state.email = email
-            st.experimental_rerun()
+        st.session_state.participant_id = participant_id
+        st.session_state.email = email
+        st.session_state.all_phrases = target_phrases + control_phrases + test_phrases
+        random.shuffle(st.session_state.all_phrases)
+        st.session_state.current_index = 0
+        st.session_state.total_correct = 0
+        st.experimental_rerun()
 
     # Verifica se il test è iniziato
     if "all_phrases" in st.session_state:
@@ -134,3 +132,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
