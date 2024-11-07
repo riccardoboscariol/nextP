@@ -2,26 +2,26 @@ import streamlit as st
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
-import random 
+import random
 
+# Funzione per l'inizializzazione e autenticazione di Google Sheets
 def init_google_sheet():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/spreadsheets",
              "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
 
-    # Usa le credenziali JSON dai secrets di Streamlit e assicuriamoci che sia un dizionario
+    # Leggi le credenziali JSON dai secrets di Streamlit
     creds_dict = st.secrets["google_sheets"]["credentials_json"]
-    if isinstance(creds_dict, str):  # Se è una stringa, convertiamola in un dizionario
+    if isinstance(creds_dict, str):  # Se è una stringa, convertila in dizionario
         creds_dict = json.loads(creds_dict)
     
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-    client = gspread.authorize(creds)
     
-    # Nome del foglio Google specificato per il progetto
-    return client.open("Dati Partecipanti").sheet1  # Assicurati che il nome del foglio sia corretto
+    # Autenticazione e accesso al Google Sheet
+    client = gspread.authorize(creds)
+    return client.open("Dati Partecipanti").sheet1  # Nome del Google Sheet
 
-# Inizializza il Google Sheet
+# Inizializza Google Sheet
 sheet = init_google_sheet()
-
 
 # Definizione delle frasi
 target_phrases = [
@@ -72,10 +72,9 @@ test_phrases = [
     {"frase": "Amazon.com Inc. (AMZN): Il titolo in data 2022-12-01 era più basso rispetto alla data 2022-11-30.", "corretta": False}
 ]
 
-
 # Funzione per registrare i risultati su Google Sheet
 def save_results(participant_id, email, responses, total_correct):
-    row = [participant_id, email]  # Aggiungi l'email nella prima posizione del foglio
+    row = [participant_id, email]
     for response in sorted(responses, key=lambda x: x["frase"]):  # Ordina alfabeticamente le frasi
         row.append(response["frase"])
         row.append(response["risposta"])
@@ -87,23 +86,21 @@ def save_results(participant_id, email, responses, total_correct):
 def main():
     st.title("Test di Valutazione delle Frasi")
     participant_id = st.text_input("Inserisci il tuo ID partecipante")
-    email = st.text_input("Inserisci la tua email")  # Casella per inserire l'email
+    email = st.text_input("Inserisci la tua email")
     
     if participant_id and email:
-        # Mescola le frasi
         all_phrases = target_phrases + control_phrases + test_phrases
         random.shuffle(all_phrases)
         
         responses = []
         total_correct = 0
 
-        # Ciclo per mostrare ciascuna frase
-        for phrase in all_phrases:
+        for i, phrase in enumerate(all_phrases):
             st.write("La frase è nascosta dietro un pannello nero.")
             st.write("Rispondi se pensi che sia vera o falsa:")
             
             if "corretta" in phrase:  # Frase di test
-                risposta = st.radio("La frase è:", ("Vera", "Falsa"))
+                risposta = st.radio("La frase è:", ("Vera", "Falsa"), key=f"test_{i}")
                 is_correct = (risposta == "Vera") == phrase["corretta"]
                 feedback = "Giusto" if is_correct else "Sbagliato"
                 responses.append({"frase": phrase["frase"], "risposta": risposta, "feedback": feedback})
@@ -111,11 +108,10 @@ def main():
                     total_correct += 1
                 st.write(feedback)
             else:  # Frase target o di controllo
-                risposta = st.radio("La frase è:", ("Vera", "Falsa"))
+                risposta = st.radio("La frase è:", ("Vera", "Falsa"), key=f"target_control_{i}")
                 responses.append({"frase": phrase["frase"], "risposta": risposta, "feedback": phrase["feedback"]})
                 st.write(phrase["feedback"])
 
-        # Salva i risultati alla fine della sessione
         if st.button("Termina e salva risultati"):
             save_results(participant_id, email, responses, total_correct)
             st.write("Risultati salvati con successo!")
