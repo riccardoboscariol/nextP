@@ -78,23 +78,25 @@ def save_single_response(participant_id, email, frase, risposta, feedback):
 # Funzione principale dell'app
 def main():
     st.title("Test di Valutazione delle Frasi")
-    
-    # Input per l'ID partecipante e l'email
-    if "participant_id" not in st.session_state:
-        st.session_state.participant_id = st.text_input("Inserisci il tuo ID partecipante")
-    if "email" not in st.session_state:
-        st.session_state.email = st.text_input("Inserisci la tua email")
 
-    if st.session_state.participant_id and st.session_state.email:
-        
-        # Preparazione frasi randomizzate
+    # Input per l'ID partecipante e l'email
+    participant_id = st.text_input("Inserisci il tuo ID partecipante", key="participant_id")
+    email = st.text_input("Inserisci la tua email", key="email")
+
+    if participant_id and email and st.button("Inizia il Test"):
+        # Imposta le variabili session_state per iniziare il test
         if "all_phrases" not in st.session_state:
             all_phrases = target_phrases + control_phrases + test_phrases
             random.shuffle(all_phrases)
             st.session_state.all_phrases = all_phrases
             st.session_state.current_index = 0
             st.session_state.total_correct = 0
+            st.session_state.participant_id = participant_id
+            st.session_state.email = email
+            st.experimental_rerun()
 
+    # Verifica se il test è iniziato
+    if "all_phrases" in st.session_state:
         # Seleziona la frase corrente
         current_phrase = st.session_state.all_phrases[st.session_state.current_index]
         
