@@ -3,6 +3,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
 import random
+from gspread.exceptions import APIError
 
 # Funzione per l'inizializzazione e autenticazione di Google Sheets
 def init_google_sheet():
@@ -16,7 +17,11 @@ def init_google_sheet():
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     
     client = gspread.authorize(creds)
-    return client.open("Dati Partecipanti").sheet1
+    try:
+        return client.open("Dati Partecipanti").sheet1
+    except APIError:
+        st.error("Errore di accesso al Google Sheet: verifica che il foglio esista e sia condiviso con l'account di servizio.")
+        return None
 
 # Inizializza Google Sheet
 sheet = init_google_sheet()
@@ -73,7 +78,10 @@ test_phrases = [
 
 # Funzione per salvare i risultati di una singola risposta
 def save_single_response(participant_id, email, frase, risposta, feedback):
-    sheet.append_row([participant_id, email, frase, risposta, feedback])
+    try:
+        sheet.append_row([participant_id, email, frase, risposta, feedback])
+    except APIError:
+        st.error("Si è verificato un problema durante il salvataggio dei dati. Riprova più tardi.")
 
 # Funzione principale dell'app
 def main():
@@ -132,4 +140,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
