@@ -9,21 +9,19 @@ def init_google_sheet():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/spreadsheets",
              "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
 
-    # Leggi le credenziali JSON dai secrets di Streamlit
     creds_dict = st.secrets["google_sheets"]["credentials_json"]
     if isinstance(creds_dict, str):  # Se è una stringa, convertila in dizionario
         creds_dict = json.loads(creds_dict)
     
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     
-    # Autenticazione e accesso al Google Sheet
     client = gspread.authorize(creds)
-    return client.open("Dati Partecipanti").sheet1  # Nome del Google Sheet
+    return client.open("Dati Partecipanti").sheet1
 
 # Inizializza Google Sheet
 sheet = init_google_sheet()
 
-# Definizione delle frasi
+# Definizione delle frasi target e di controllo
 target_phrases = [
     {"frase": "Apple Inc. (AAPL): Il titolo in data 2025-05-13 sarà più basso rispetto alla data 2025-04-27.", "feedback": "Di questa frase non sappiamo se è vera o falsa"},
     {"frase": "Microsoft Corp. (MSFT): Il titolo in data 2025-05-11 sarà più basso rispetto alla data 2025-05-12.", "feedback": "Di questa frase non sappiamo se è vera o falsa"},
@@ -36,6 +34,7 @@ control_phrases = [
     {"frase": "Amazon.com Inc. (AMZN): Il titolo in data 2025-01-28 sarà più alto rispetto alla data 2025-02-01.", "feedback": "Di questa frase non sappiamo se è vera o falsa"}
 ]
 
+# Definizione delle frasi di test con 15 frasi vere e 15 frasi false
 test_phrases = [
     # Frasi di Test Vere
     {"frase": "Apple Inc. (AAPL): Il titolo in data 2023-03-15 era più alto rispetto alla data 2023-03-10.", "corretta": True},
@@ -72,49 +71,64 @@ test_phrases = [
     {"frase": "Amazon.com Inc. (AMZN): Il titolo in data 2022-12-01 era più basso rispetto alla data 2022-11-30.", "corretta": False}
 ]
 
-# Funzione per registrare i risultati su Google Sheet
-def save_results(participant_id, email, responses, total_correct):
-    row = [participant_id, email]
-    for response in sorted(responses, key=lambda x: x["frase"]):  # Ordina alfabeticamente le frasi
-        row.append(response["frase"])
-        row.append(response["risposta"])
-        row.append(response["feedback"])
-    row.append(total_correct)
-    sheet.append_row(row)
+# Funzione per salvare i risultati di una singola risposta
+def save_single_response(participant_id, email, frase, risposta, feedback):
+    sheet.append_row([participant_id, email, frase, risposta, feedback])
 
 # Funzione principale dell'app
 def main():
     st.title("Test di Valutazione delle Frasi")
-    participant_id = st.text_input("Inserisci il tuo ID partecipante")
-    email = st.text_input("Inserisci la tua email")
     
-    if participant_id and email:
-        all_phrases = target_phrases + control_phrases + test_phrases
-        random.shuffle(all_phrases)
+    # Input per l'ID partecipante e l'email
+    if "participant_id" not in st.session_state:
+        st.session_state.participant_id = st.text_input("Inserisci il tuo ID partecipante")
+    if "email" not in st.session_state:
+        st.session_state.email = st.text_input("Inserisci la tua email")
+
+    if st.session_state.participant_id and st.session_state.email:
         
-        responses = []
-        total_correct = 0
+        # Preparazione frasi randomizzate
+        if "all_phrases" not in st.session_state:
+            all_phrases = target_phrases + control_phrases + test_phrases
+            random.shuffle(all_phrases)
+            st.session_state.all_phrases = all_phrases
+            st.session_state.current_index = 0
+            st.session_state.total_correct = 0
 
-        for i, phrase in enumerate(all_phrases):
-            st.write("La frase è nascosta dietro un pannello nero.")
-            st.write("Rispondi se pensi che sia vera o falsa:")
-            
-            if "corretta" in phrase:  # Frase di test
-                risposta = st.radio("La frase è:", ("Vera", "Falsa"), key=f"test_{i}")
-                is_correct = (risposta == "Vera") == phrase["corretta"]
+        # Seleziona la frase corrente
+        current_phrase = st.session_state.all_phrases[st.session_state.current_index]
+        
+        # Mostra la domanda senza risposta di default
+        risposta = st.radio("La frase è:", ("Seleziona", "Vera", "Falsa"), index=0, key=f"response_{st.session_state.current_index}")
+        
+        # Mostra la frase nascosta e richiede una risposta
+        st.write("La frase è nascosta dietro un pannello nero.")
+        st.write("Rispondi se pensi che sia vera o falsa:")
+
+        if risposta != "Seleziona":
+            # Verifica la correttezza e genera feedback
+            if "corretta" in current_phrase:  # Frase di test
+                is_correct = (risposta == "Vera") == current_phrase["corretta"]
                 feedback = "Giusto" if is_correct else "Sbagliato"
-                responses.append({"frase": phrase["frase"], "risposta": risposta, "feedback": feedback})
                 if is_correct:
-                    total_correct += 1
-                st.write(feedback)
+                    st.session_state.total_correct += 1
             else:  # Frase target o di controllo
-                risposta = st.radio("La frase è:", ("Vera", "Falsa"), key=f"target_control_{i}")
-                responses.append({"frase": phrase["frase"], "risposta": risposta, "feedback": phrase["feedback"]})
-                st.write(phrase["feedback"])
+                feedback = current_phrase["feedback"]
 
-        if st.button("Termina e salva risultati"):
-            save_results(participant_id, email, responses, total_correct)
-            st.write("Risultati salvati con successo!")
+            # Salva la risposta per la frase corrente
+            save_single_response(st.session_state.participant_id, st.session_state.email, current_phrase["frase"], risposta, feedback)
+            st.write(feedback)
+
+            # Passa alla domanda successiva
+            st.session_state.current_index += 1
+            
+            # Se tutte le domande sono state completate
+            if st.session_state.current_index >= len(st.session_state.all_phrases):
+                st.write("Test completato!")
+                st.write(f"Risposte corrette (test): {st.session_state.total_correct} su {len(test_phrases)}")
+                st.stop()
+            else:
+                st.experimental_rerun()
 
 if __name__ == "__main__":
     main()
