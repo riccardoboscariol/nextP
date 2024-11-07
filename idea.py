@@ -1,12 +1,13 @@
 import streamlit as st
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+import json
 
 def init_google_sheet():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/spreadsheets",
              "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
 
-    # Usa le credenziali JSON dai secrets senza json.loads
+    # Leggi le credenziali JSON dai secrets di Streamlit come un dizionario
     creds_dict = st.secrets["google_sheets"]["credentials_json"]
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     
@@ -14,8 +15,9 @@ def init_google_sheet():
     client = gspread.authorize(creds)
     return client.open("Dati Partecipanti").sheet1  # Nome del Google Sheet
 
-# Inizializza Google Sheet
+# Esempio di utilizzo
 sheet = init_google_sheet()
+
 
 
 # Definizione delle frasi
