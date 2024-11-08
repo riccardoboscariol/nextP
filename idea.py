@@ -4,6 +4,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 import json
 import random
 from gspread.exceptions import APIError
+import time  # Per aggiungere il ritardo nella visualizzazione del feedback
 
 # Funzione per l'inizializzazione e autenticazione di Google Sheets
 def init_google_sheet():
@@ -109,12 +110,14 @@ def main():
         # Seleziona la frase corrente
         current_phrase = st.session_state.all_phrases[st.session_state.current_index]
         
-        # Mostra la domanda senza risposta di default
-        risposta = st.radio("La frase è:", ("Seleziona", "Vera", "Falsa"), index=0, key=f"response_{st.session_state.current_index}")
+        # Mostra un pannello nero con la frase nascosta
+        st.markdown(
+            "<div style='width: 100%; height: 60px; background-color: black; color: black; text-align: center;'>"
+            "Testo Nascosto Dietro il Pannello Nero</div>",
+            unsafe_allow_html=True
+        )
         
-        # Mostra la frase nascosta e richiede una risposta
-        st.write("La frase è nascosta dietro un pannello nero.")
-        st.write("Rispondi se pensi che sia vera o falsa:")
+        risposta = st.radio("La frase è:", ("Seleziona", "Vera", "Falsa"), index=0, key=f"response_{st.session_state.current_index}")
 
         if risposta != "Seleziona":
             # Verifica la correttezza e genera feedback
@@ -128,7 +131,10 @@ def main():
 
             # Salva la risposta per la frase corrente
             save_single_response(st.session_state.participant_id, st.session_state.email, current_phrase["frase"], risposta, feedback)
+            
+            # Mostra il feedback e aspetta prima di passare alla domanda successiva
             st.write(feedback)
+            time.sleep(2)  # Attende 2 secondi per mostrare il feedback
 
             # Passa alla domanda successiva
             st.session_state.current_index += 1
