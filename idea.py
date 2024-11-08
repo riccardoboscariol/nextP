@@ -89,7 +89,7 @@ def save_single_response(participant_id, email, frase, risposta, feedback):
 
 # Funzione principale dell'app
 def main():
-    st.title("Test di Valutazione delle Frasi")
+    st.title("Test di Valutazione a intuito di Frasi Nascoste")
 
     # Input per l'ID partecipante e l'email
     participant_id = st.text_input("Inserisci il tuo ID partecipante")
@@ -120,7 +120,7 @@ def main():
         
         # Opzioni di risposta con blocco una volta confermata
         risposta = st.radio(
-            "La frase è:", 
+            "La frase, nascosta dietro al pannello nero, è (rispondi mediante l'intuito, facendo attenzione alle tue sensazioni interne):", 
             ("Seleziona", "Vera", "Falsa"), 
             index=0, 
             key=f"response_{st.session_state.current_index}",
