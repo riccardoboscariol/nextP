@@ -120,7 +120,7 @@ def main():
         
         # Opzioni di risposta con blocco una volta confermata
         risposta = st.radio(
-            "Rispondi alla prossima domanda seguendo il tuo intuito e ascoltando le tue sensazioni interiori. La frase, nascosta dietro al pannello nero, è:", 
+            "Rispondi alla prossima domanda seguendo il tuo intuito e ascoltando le tue sensazioni interiori. Dovrai rispondere, rispetto ad ogni frase presentata, nascosta dietro al pannello nero, se è vera o falsa. Se otterrai un punteggio più alto di 25 su 30 risposte corrette riceverai un buono Amazon di 380 euro.", 
             ("Seleziona", "Vera", "Falsa"), 
             index=0, 
             key=f"response_{st.session_state.current_index}",
