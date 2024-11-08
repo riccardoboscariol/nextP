@@ -15,17 +15,18 @@ def init_google_sheet():
         creds_dict = json.loads(creds_dict)
     
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-    
     client = gspread.authorize(creds)
+    
     try:
         return client.open("Dati Partecipanti").sheet1
     except APIError:
         st.error("Errore di accesso al Google Sheet: verifica che il foglio esista e sia condiviso con l'account di servizio.")
         return None
 
-# Inizializza Google Sheet
-sheet = init_google_sheet()
-
+# Inizializza Google Sheet una volta sola e salva in session_state
+if "sheet" not in st.session_state:
+    st.session_state.sheet = init_google_sheet()
+    
 # Definizione delle frasi target e di controllo
 target_phrases = [
     {"frase": "Apple Inc. (AAPL): Il titolo in data 2025-05-13 sarà più basso rispetto alla data 2025-04-27.", "feedback": "Di questa frase non sappiamo se è vera o falsa"},
@@ -78,10 +79,12 @@ test_phrases = [
 
 # Funzione per salvare i risultati di una singola risposta
 def save_single_response(participant_id, email, frase, risposta, feedback):
-    try:
-        sheet.append_row([participant_id, email, frase, risposta, feedback])
-    except APIError:
-        st.error("Si è verificato un problema durante il salvataggio dei dati. Riprova più tardi.")
+    sheet = st.session_state.sheet  # Usa il foglio dal session_state
+    if sheet is not None:  # Verifica che il foglio sia valido
+        try:
+            sheet.append_row([participant_id, email, frase, risposta, feedback])
+        except APIError:
+            st.error("Si è verificato un problema durante il salvataggio dei dati. Riprova più tardi.")
 
 # Funzione principale dell'app
 def main():
