@@ -120,7 +120,7 @@ def main():
         
         # Opzioni di risposta con blocco una volta confermata
         risposta = st.radio(
-            "La frase, nascosta dietro al pannello nero, è (rispondi mediante l'intuito, facendo attenzione alle tue sensazioni interne):", 
+            "Rispondi alla somanda seguente mediante l'intuito, facendo attenzione alle tue sensazioni interne. La frase, nascosta dietro al pannello nero, è:", 
             ("Seleziona", "Vera", "Falsa"), 
             index=0, 
             key=f"response_{st.session_state.current_index}",
