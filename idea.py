@@ -4,7 +4,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 import json
 import random
 from gspread.exceptions import APIError
-import time  # Per aggiungere il ritardo nella visualizzazione del feedback
+import time
 
 # Funzione per l'inizializzazione e autenticazione di Google Sheets
 def init_google_sheet():
@@ -103,6 +103,7 @@ def main():
         random.shuffle(st.session_state.all_phrases)
         st.session_state.current_index = 0
         st.session_state.total_correct = 0
+        st.session_state.response_locked = False  # Variabile per bloccare la risposta
         st.experimental_rerun()
 
     # Verifica se il test è iniziato
@@ -117,9 +118,19 @@ def main():
             unsafe_allow_html=True
         )
         
-        risposta = st.radio("La frase è:", ("Seleziona", "Vera", "Falsa"), index=0, key=f"response_{st.session_state.current_index}")
+        # Opzioni di risposta con blocco una volta confermata
+        risposta = st.radio(
+            "La frase è:", 
+            ("Seleziona", "Vera", "Falsa"), 
+            index=0, 
+            key=f"response_{st.session_state.current_index}",
+            disabled=st.session_state.response_locked  # Blocca la risposta se già confermata
+        )
 
-        if risposta != "Seleziona":
+        # Conferma risposta e mostra feedback solo se non è stata ancora confermata
+        if st.button("Conferma") and not st.session_state.response_locked:
+            st.session_state.response_locked = True  # Blocca la risposta una volta confermata
+
             # Verifica la correttezza e genera feedback
             if "corretta" in current_phrase:  # Frase di test
                 is_correct = (risposta == "Vera") == current_phrase["corretta"]
@@ -132,12 +143,13 @@ def main():
             # Salva la risposta per la frase corrente
             save_single_response(st.session_state.participant_id, st.session_state.email, current_phrase["frase"], risposta, feedback)
             
-            # Mostra il feedback e aspetta prima di passare alla domanda successiva
+            # Mostra il feedback e attende prima di passare alla domanda successiva
             st.write(feedback)
             time.sleep(2)  # Attende 2 secondi per mostrare il feedback
 
             # Passa alla domanda successiva
             st.session_state.current_index += 1
+            st.session_state.response_locked = False  # Sblocca la risposta per la nuova domanda
             
             # Se tutte le domande sono state completate
             if st.session_state.current_index >= len(st.session_state.all_phrases):
