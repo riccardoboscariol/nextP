@@ -3,160 +3,232 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
 import random
-from gspread.exceptions import APIError
+from gspread.exceptions import APIError, GSpreadException
 import time
+from datetime import datetime
+import pandas as pd
 
-# Funzione per l'inizializzazione e autenticazione di Google Sheets
-def init_google_sheet():
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/spreadsheets",
-             "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
+# Funzione per l'inizializzazione e autenticazione di Google Sheets con riprova
+def init_google_sheet(max_retries=3):
+    scope = [
+        "https://spreadsheets.google.com/feeds",
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive.file",
+        "https://www.googleapis.com/auth/drive"
+    ]
 
     creds_dict = st.secrets["google_sheets"]["credentials_json"]
-    if isinstance(creds_dict, str):  # Se è una stringa, convertila in dizionario
+    if isinstance(creds_dict, str):
         creds_dict = json.loads(creds_dict)
-    
+
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     client = gspread.authorize(creds)
-    
-    try:
-        return client.open("Dati Partecipanti").sheet1
-    except APIError:
-        st.error("Errore di accesso al Google Sheet: verifica che il foglio esista e sia condiviso con l'account di servizio.")
-        return None
 
-# Inizializza Google Sheet una volta sola e salva in session_state
+    for attempt in range(max_retries):
+        try:
+            return client.open("Dati Partecipanti").sheet1
+        except APIError as e:
+            if attempt < max_retries - 1:
+                st.warning(f"Errore di connessione. Riprova ({attempt + 1}/{max_retries})...")
+                time.sleep(2)
+            else:
+                st.error("Errore di accesso al Google Sheet: verifica la connessione internet e riprova più tardi.")
+                return None
+
 if "sheet" not in st.session_state:
     st.session_state.sheet = init_google_sheet()
-    
-# Definizione delle frasi target e di controllo
+
+def load_sheet_data(sheet, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            records = sheet.get_all_records()
+            return pd.DataFrame(records)
+        except GSpreadException:
+            if attempt < max_retries - 1:
+                st.warning(f"Errore nel caricamento dei dati. Riprova ({attempt + 1}/{max_retries})...")
+                time.sleep(2)
+            else:
+                st.error("Errore nel caricamento dei dati. Controlla la connessione internet e riprova più tardi.")
+                try:
+                    rows = sheet.get_all_values()
+                    headers = rows[0]
+                    data = rows[1:]
+                    return pd.DataFrame(data, columns=headers)
+                except Exception as e:
+                    st.error("Errore nel caricamento dei dati dal Google Sheet.")
+                    return None
+
+# Frasi target e di controllo
 target_phrases = [
-    {"frase": "Apple Inc. (AAPL): Il titolo in data 2025-05-13 sarà più basso rispetto alla data 2025-04-27.", "feedback": "Di questa frase non sappiamo se è vera o falsa"},
-    {"frase": "Microsoft Corp. (MSFT): Il titolo in data 2025-05-11 sarà più basso rispetto alla data 2025-05-12.", "feedback": "Di questa frase non sappiamo se è vera o falsa"},
-    {"frase": "Amazon.com Inc. (AMZN): Il titolo in data 2025-02-01 sarà più alto rispetto alla data 2025-01-28.", "feedback": "Di questa frase non sappiamo se è vera o falsa"}
+    {"frase": "On May 31, 2025, in the Champions League football match PSG vs. Inter, PSG will win against Inter", "feedback": "We do not know if this statement is true or false."},
 ]
 
 control_phrases = [
-    {"frase": "Apple Inc. (AAPL): Il titolo in data 2025-04-27 sarà più basso rispetto alla data 2025-05-13.", "feedback": "Di questa frase non sappiamo se è vera o falsa"},
-    {"frase": "Microsoft Corp. (MSFT): Il titolo in data 2025-05-11 sarà più alto rispetto alla data 2025-05-15.", "feedback": "Di questa frase non sappiamo se è vera o falsa"},
-    {"frase": "Amazon.com Inc. (AMZN): Il titolo in data 2025-01-28 sarà più alto rispetto alla data 2025-02-01.", "feedback": "Di questa frase non sappiamo se è vera o falsa"}
+    {"frase": "On May 31, 2025, in the Champions League football match PSG vs. Inter, Inter will win against PSG", "feedback": "We do not know if this statement is true or false."},
+
 ]
 
-# Definizione delle frasi di test con 15 frasi vere e 15 frasi false
+# Frasi di test con risposte
+raw_test_phrases = [
+    ("Barcelona won against Real Madrid on August 15, 2023.", False),
+    ("Napoli won against Lazio on January 20, 2024.", True),
+    ("Roma won against Juventus on December 15, 2023.", False),
+    ("Juventus won against Torino on January 5, 2023.", True),
+    ("Manchester City won against Chelsea on October 30, 2023.", False),
+    ("Inter won against Torino on January 20, 2024.", True),
+    ("Manchester City won against Liverpool on August 8, 2023.", False),
+    ("Fiorentina won against Torino on February 8, 2024.", False),
+    ("Manchester United won against Chelsea on December 30, 2023.", True),
+    ("Real Madrid won against Barcelona on June 10, 2023.", False),
+    ("Barcelona won against Atletico Madrid on April 25, 2024.", False),
+    ("Borussia Dortmund won against Leipzig on October 30, 2024.", False),
+    ("PSG won against Lille on July 8, 2023.", True),
+    ("Marseille won against PSG on May 5, 2024.", True),
+    ("Inter won against Fiorentina on April 15, 2023.", False),
+    ("Milan won against Napoli on February 8, 2024.", False),
+    ("Fiorentina won against Bologna on March 15, 2024.", True),
+    ("Napoli won against Fiorentina on June 30, 2023.", False),
+    ("PSG won against Marseille on May 5, 2024.", True),
+    ("Milan won against Napoli on July 8, 2023.", False),
+    ("Liverpool won against Manchester United on December 15, 2023.", False),
+    ("Bayern Munich won against Leipzig on July 25, 2023.", True),
+    ("Napoli won against Lazio on November 10, 2023.", True),
+    ("Chelsea won against Manchester United on October 30, 2023.", False),
+    ("PSG won against Lille on August 15, 2023.", True),
+    ("Bayern Munich won against Leipzig on October 10, 2023.", True),
+    ("Arsenal won against Tottenham on January 10, 2024.", False),
+    ("Inter won against Roma on May 15, 2023.", True),
+    ("Bayern Munich won against Borussia Dortmund on July 30, 2024.", True),
+    ("Chelsea won against Tottenham on August 8, 2024.", False),
+]
+
 test_phrases = [
-    # Frasi di Test Vere
-    {"frase": "Apple Inc. (AAPL): Il titolo in data 2023-03-15 era più alto rispetto alla data 2023-03-10.", "corretta": True},
-    {"frase": "Microsoft Corp. (MSFT): Il titolo in data 2023-06-20 era più basso rispetto alla data 2023-06-21.", "corretta": True},
-    {"frase": "Amazon.com Inc. (AMZN): Il titolo in data 2022-12-01 era più basso rispetto alla data 2022-12-05.", "corretta": True},
-    {"frase": "Tesla Inc. (TSLA): Il titolo in data 2022-09-14 era più alto rispetto alla data 2022-09-12.", "corretta": True},
-    {"frase": "Alphabet Inc. (GOOGL): Il titolo in data 2023-02-20 era più alto rispetto alla data 2023-02-18.", "corretta": True},
-    {"frase": "Meta Platforms Inc. (META): Il titolo in data 2023-01-15 era più basso rispetto alla data 2023-01-18.", "corretta": True},
-    {"frase": "Apple Inc. (AAPL): Il titolo in data 2022-11-22 era più basso rispetto alla data 2022-11-25.", "corretta": True},
-    {"frase": "Microsoft Corp. (MSFT): Il titolo in data 2022-07-10 era più alto rispetto alla data 2022-07-08.", "corretta": True},
-    {"frase": "Amazon.com Inc. (AMZN): Il titolo in data 2023-04-12 era più basso rispetto alla data 2023-04-15.", "corretta": True},
-    {"frase": "Tesla Inc. (TSLA): Il titolo in data 2022-10-01 era più alto rispetto alla data 2022-09-28.", "corretta": True},
-    {"frase": "Alphabet Inc. (GOOGL): Il titolo in data 2022-08-30 era più basso rispetto alla data 2022-08-31.", "corretta": True},
-    {"frase": "Meta Platforms Inc. (META): Il titolo in data 2023-05-01 era più alto rispetto alla data 2023-04-28.", "corretta": True},
-    {"frase": "Apple Inc. (AAPL): Il titolo in data 2022-06-18 era più basso rispetto alla data 2022-06-20.", "corretta": True},
-    {"frase": "Microsoft Corp. (MSFT): Il titolo in data 2023-03-05 era più alto rispetto alla data 2023-03-03.", "corretta": True},
-    {"frase": "Amazon.com Inc. (AMZN): Il titolo in data 2022-11-30 era più basso rispetto alla data 2022-12-01.", "corretta": True},
-    
-    # Frasi di Test False
-    {"frase": "Apple Inc. (AAPL): Il titolo in data 2023-03-10 era più alto rispetto alla data 2023-03-15.", "corretta": False},
-    {"frase": "Microsoft Corp. (MSFT): Il titolo in data 2023-06-21 era più basso rispetto alla data 2023-06-20.", "corretta": False},
-    {"frase": "Amazon.com Inc. (AMZN): Il titolo in data 2022-12-05 era più basso rispetto alla data 2022-12-01.", "corretta": False},
-    {"frase": "Tesla Inc. (TSLA): Il titolo in data 2022-09-12 era più alto rispetto alla data 2022-09-14.", "corretta": False},
-    {"frase": "Alphabet Inc. (GOOGL): Il titolo in data 2023-02-18 era più alto rispetto alla data 2023-02-20.", "corretta": False},
-    {"frase": "Meta Platforms Inc. (META): Il titolo in data 2023-01-18 era più basso rispetto alla data 2023-01-15.", "corretta": False},
-    {"frase": "Apple Inc. (AAPL): Il titolo in data 2022-11-25 era più basso rispetto alla data 2022-11-22.", "corretta": False},
-    {"frase": "Microsoft Corp. (MSFT): Il titolo in data 2022-07-08 era più alto rispetto alla data 2022-07-10.", "corretta": False},
-    {"frase": "Amazon.com Inc. (AMZN): Il titolo in data 2023-04-15 era più basso rispetto alla data 2023-04-12.", "corretta": False},
-    {"frase": "Tesla Inc. (TSLA): Il titolo in data 2022-09-28 era più alto rispetto alla data 2022-10-01.", "corretta": False},
-    {"frase": "Alphabet Inc. (GOOGL): Il titolo in data 2022-08-31 era più basso rispetto alla data 2022-08-30.", "corretta": False},
-    {"frase": "Meta Platforms Inc. (META): Il titolo in data 2023-04-28 era più alto rispetto alla data 2023-05-01.", "corretta": False},
-    {"frase": "Apple Inc. (AAPL): Il titolo in data 2022-06-20 era più basso rispetto alla data 2022-06-18.", "corretta": False},
-    {"frase": "Microsoft Corp. (MSFT): Il titolo in data 2023-03-03 era più alto rispetto alla data 2023-03-05.", "corretta": False},
-    {"frase": "Amazon.com Inc. (AMZN): Il titolo in data 2022-12-01 era più basso rispetto alla data 2022-11-30.", "corretta": False}
+    {"frase": frase, "corretta": corretta} for frase, corretta in raw_test_phrases
 ]
 
-# Funzione per salvare i risultati di una singola risposta
-def save_single_response(participant_id, email, frase, risposta, feedback):
-    sheet = st.session_state.sheet  # Usa il foglio dal session_state
-    if sheet is not None:  # Verifica che il foglio sia valido
-        try:
-            sheet.append_row([participant_id, email, frase, risposta, feedback])
-        except APIError:
-            st.error("Si è verificato un problema durante il salvataggio dei dati. Riprova più tardi.")
+def save_all_responses(participant_id, email, all_responses, completed=True):
+    sheet = st.session_state.sheet
+    if sheet is not None:
+        for attempt in range(3):
+            try:
+                for response in all_responses:
+                    sheet.append_row([
+                        participant_id,
+                        email,
+                        response["frase"],
+                        response["risposta"],
+                        response["feedback"],
+                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "COMPLETED" if completed else "INCOMPLETE"
+                    ])
+                return True
+            except APIError:
+                if attempt < 2:
+                    time.sleep(2)
+                else:
+                    st.error("Si è verificato un problema durante il salvataggio dei dati. Riprova più tardi.")
+                    return False
+    return False
 
-# Funzione principale dell'app
 def main():
-    st.title("Test di Valutazione a intuito di Frasi Nascoste")
+    st.title("Intuitive Evaluation Test of Hidden Statements")
 
-    # Input per l'ID partecipante e l'email
-    participant_id = st.text_input("Inserisci il tuo ID partecipante")
-    email = st.text_input("Inserisci la tua email")
+    participant_id = st.text_input("Enter your participant ID (Prolific ID)")
+    email = st.text_input("Enter your email (if you wish to receive the results of the study, otherwise write 'no'.)")
 
-    if participant_id and email and st.button("Inizia il Test"):
-        # Imposta le variabili session_state per iniziare il test
+    if participant_id and email and st.button("Start the Test"):
         st.session_state.participant_id = participant_id
         st.session_state.email = email
         st.session_state.all_phrases = target_phrases + control_phrases + test_phrases
         random.shuffle(st.session_state.all_phrases)
         st.session_state.current_index = 0
         st.session_state.total_correct = 0
-        st.session_state.response_locked = False  # Variabile per bloccare la risposta
+        st.session_state.response_locked = False
+        st.session_state.all_responses = []
+        st.session_state.start_time = datetime.now()
         st.experimental_rerun()
 
-    # Verifica se il test è iniziato
     if "all_phrases" in st.session_state:
-        # Seleziona la frase corrente
-        current_phrase = st.session_state.all_phrases[st.session_state.current_index]
-        
-        # Mostra un pannello nero con la frase nascosta
-        st.markdown(
-            "<div style='width: 100%; height: 60px; background-color: black; color: black; text-align: center;'>"
-            "Testo Nascosto Dietro il Pannello Nero</div>",
-            unsafe_allow_html=True
-        )
-        
-        # Opzioni di risposta con blocco una volta confermata
-        risposta = st.radio(
-            "Rispondi alla prossima domanda seguendo il tuo intuito e ascoltando le tue sensazioni interiori. Dovrai rispondere, rispetto ad ogni frase presentata, nascosta dietro al pannello nero, se è vera o falsa. Se otterrai un punteggio più alto di 25 su 30 risposte corrette riceverai un buono Amazon di 380 euro.", 
-            ("Seleziona", "Vera", "Falsa"), 
-            index=0, 
-            key=f"response_{st.session_state.current_index}",
-            disabled=st.session_state.response_locked  # Blocca la risposta se già confermata
-        )
+        if st.session_state.current_index < len(st.session_state.all_phrases):
+            current_phrase = st.session_state.all_phrases[st.session_state.current_index]
 
-        # Conferma risposta e mostra feedback solo se non è stata ancora confermata
-        if st.button("Conferma") and not st.session_state.response_locked:
-            st.session_state.response_locked = True  # Blocca la risposta una volta confermata
+            st.markdown(
+                "<div style='width: 100%; height: 80px; background-color: black; color: black; text-align: center;'>"
+                "Hidden Text Behind the Black Panel</div>",
+                unsafe_allow_html=True
+            )
 
-            # Verifica la correttezza e genera feedback
-            if "corretta" in current_phrase:  # Frase di test
-                is_correct = (risposta == "Vera") == current_phrase["corretta"]
-                feedback = "Giusto" if is_correct else "Sbagliato"
-                if is_correct:
-                    st.session_state.total_correct += 1
-            else:  # Frase target o di controllo
-                feedback = current_phrase["feedback"]
+            st.markdown(
+                "Answer the next question based on your intuition.<br>Is the hidden statement behind the black rectangle above true or false?",
+                unsafe_allow_html=True
+            )
 
-            # Salva la risposta per la frase corrente
-            save_single_response(st.session_state.participant_id, st.session_state.email, current_phrase["frase"], risposta, feedback)
-            
-            # Mostra il feedback e attende prima di passare alla domanda successiva
-            st.write(feedback)
-            time.sleep(2)  # Attende 2 secondi per mostrare il feedback
+            risposta = st.radio(
+                "Select your answer:",
+                ("Select", "True", "False"),
+                index=0,
+                key=f"response_{st.session_state.current_index}",
+                disabled=st.session_state.response_locked
+            )
 
-            # Passa alla domanda successiva
-            st.session_state.current_index += 1
-            st.session_state.response_locked = False  # Sblocca la risposta per la nuova domanda
-            
-            # Se tutte le domande sono state completate
-            if st.session_state.current_index >= len(st.session_state.all_phrases):
-                st.write("Test completato!")
-                st.write(f"Risposte corrette (test): {st.session_state.total_correct} su {len(test_phrases)}")
+            if risposta != "Select" and st.button("Confirm") and not st.session_state.response_locked:
+                st.session_state.response_locked = True
+
+                if "corretta" in current_phrase:
+                    is_correct = (risposta == "True") == current_phrase["corretta"]
+                    feedback = "Correct" if is_correct else "Incorrect"
+                    if is_correct:
+                        st.session_state.total_correct += 1
+                else:
+                    feedback = current_phrase["feedback"]
+
+                st.session_state.all_responses.append({
+                    "frase": current_phrase["frase"],
+                    "risposta": risposta,
+                    "feedback": feedback
+                })
+
+                st.write(feedback)
+                time.sleep(1)
+                st.write("Generating a new statement...")
+                time.sleep(1)
+
+                st.session_state.current_index += 1
+                st.session_state.response_locked = False
+                st.experimental_rerun()
+
+            if st.button("Abandon Test"):
+                if save_all_responses(
+                    st.session_state.participant_id,
+                    st.session_state.email,
+                    st.session_state.all_responses,
+                    completed=False
+                ):
+                    st.warning("Your partial responses have been saved. Thank you for your participation.")
+                    st.stop()
+                else:
+                    st.error("Error saving partial responses. Please try again.")
+
+        else:
+            if save_all_responses(
+                st.session_state.participant_id,
+                st.session_state.email,
+                st.session_state.all_responses,
+                completed=True
+            ):
+                st.write("Test completed!")
+                st.write(f"Correct answers (test): {st.session_state.total_correct} out of {len(test_phrases)}")
+                
+                # Calcolo tempo impiegato
+                time_spent = datetime.now() - st.session_state.start_time
+                minutes, seconds = divmod(time_spent.total_seconds(), 60)
+                st.write(f"Time spent: {int(minutes)} minutes and {int(seconds)} seconds")
+                
                 st.stop()
             else:
+                st.error("Error saving data. Please try again.")
+                st.session_state.current_index -= 1
+                st.session_state.response_locked = False
                 st.experimental_rerun()
 
 if __name__ == "__main__":
