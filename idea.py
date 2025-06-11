@@ -61,14 +61,22 @@ def load_sheet_data(sheet, max_retries=3):
 # Frasi target e di controllo
 target_phrases = [
     {
-        "frase": "On 24 August 2025, the Meta Platforms stock will be higher than on 07 June 2025",
+        "frase": "Tesla stock will be higher on 09 July 2025 than on 12 June 2025",
+        "feedback": "We do not know if this statement is true or false."
+    },
+    {
+        "frase": "Apple stock will be higher on 23 August 2025 than on 15 June 2025",
         "feedback": "We do not know if this statement is true or false."
     }
 ]
 
 control_phrases = [
     {
-        "frase": "On 24 August 2025, the Meta Platforms stock will be lower than on 07 June 2025",
+        "frase": "Tesla stock will be lower on 09 July 2025 than on 12 June 2025",
+        "feedback": "We do not know if this statement is true or false."
+    },
+    {
+        "frase": "Apple stock will be lower on 23 August 2025 than on 15 June 2025",
         "feedback": "We do not know if this statement is true or false."
     }
 ]
