@@ -58,20 +58,28 @@ def load_sheet_data(sheet, max_retries=3):
                     st.error("Errore nel caricamento dei dati dal Google Sheet.")
                     return None
 
-# UNA sola frase target e UNA sola frase di controllo
 target_phrases = [
     {
-        "frase": "The Amazon stock will be higher on 19 September 2025 than on 25 June 2025",
+        "frase": "On 10 October 2025, the Apple stock will be lower than on 03 July 2025.",
+        "feedback": "We do not know if this statement is true or false."
+    },
+    {
+        "frase": "On 13 August 2025, the Netflix stock will be higher than on 06 July 2025.",
         "feedback": "We do not know if this statement is true or false."
     }
 ]
 
 control_phrases = [
     {
-        "frase": "The Amazon stock will be lower on 19 September 2025 than on 25 June 2025",
+        "frase": "On 10 October 2025, the Apple stock will be higher than on 03 July 2025.",
+        "feedback": "We do not know if this statement is true or false."
+    },
+    {
+        "frase": "On 13 August 2025, the Netflix stock will be lower than on 06 July 2025.",
         "feedback": "We do not know if this statement is true or false."
     }
 ]
+
 
 
 raw_test_phrases = [
