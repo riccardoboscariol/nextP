@@ -60,30 +60,30 @@ def load_sheet_data(sheet, max_retries=3):
 
 target_phrases = [
     {
-        "frase": "Levadia will win the match against Rīgas FS on July 8, 2025.",
+        "frase": "Noah will win the match against Budućnost on July 8, 2025.",
         "feedback": "We do not know if this statement is true or false."
     },
     {
-        "frase": "Olimpija will win the match against Kairat on July 8, 2025.",
+        "frase": "KuPS Kuopio will win the match against Milsami on July 8, 2025.",
         "feedback": "We do not know if this statement is true or false."
     },
     {
-        "frase": "The New Saints will win the match against Shkëndija on July 8, 2025.",
+        "frase": "Saburtalo will win the match against Malmö on July 8, 2025.",
         "feedback": "We do not know if this statement is true or false."
     }
 ]
 
 control_phrases = [
     {
-        "frase": "Levadia will lose the match against Rīgas FS on July 8, 2025.",
+        "frase": "Noah will lose the match against Budućnost on July 8, 2025.",
         "feedback": "We do not know if this statement is true or false."
     },
     {
-        "frase": "Olimpija will lose the match against Kairat on July 8, 2025.",
+        "frase": "KuPS Kuopio will lose the match against Milsami on July 8, 2025.",
         "feedback": "We do not know if this statement is true or false."
     },
     {
-        "frase": "The New Saints will lose the match against Shkëndija on July 8, 2025.",
+        "frase": "Saburtalo will lose the match against Malmö on July 8, 2025.",
         "feedback": "We do not know if this statement is true or false."
     }
 ]
