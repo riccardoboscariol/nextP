@@ -62,12 +62,21 @@ target_phrases = [
     {
         "frase": "Budućnost will win against Noah on July 15, 2025 (Champions League – qualifying round).",
         "feedback": "We do not know if this statement is true or false."
+    },
+    {
+        "frase": "Shkëndija will win against The New Saints on July 15, 2025 (Champions League – qualifying round).",
+        "feedback": "We do not know if this statement is true or false."
     }
 ]
+
 
 control_phrases = [
     {
         "frase": "Budućnost will lose against Noah on July 15, 2025 (Champions League – qualifying round).",
+        "feedback": "We do not know if this statement is true or false."
+    },
+    {
+        "frase": "Shkëndija will lose against The New Saints on July 15, 2025 (Champions League – qualifying round).",
         "feedback": "We do not know if this statement is true or false."
     }
 ]
