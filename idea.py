@@ -8,7 +8,7 @@ import time
 from datetime import datetime
 import pandas as pd
 
-# Funzione per l'inizializzazione e autenticazione di Google Sheets con riprova
+# Inizializzazione e autenticazione Google Sheets
 def init_google_sheet(max_retries=3):
     scope = [
         "https://spreadsheets.google.com/feeds",
@@ -27,7 +27,7 @@ def init_google_sheet(max_retries=3):
     for attempt in range(max_retries):
         try:
             return client.open("Dati Partecipanti").sheet1
-        except APIError as e:
+        except APIError:
             if attempt < max_retries - 1:
                 st.warning(f"Errore di connessione. Riprova ({attempt + 1}/{max_retries})...")
                 time.sleep(2)
@@ -54,68 +54,67 @@ def load_sheet_data(sheet, max_retries=3):
                     headers = rows[0]
                     data = rows[1:]
                     return pd.DataFrame(data, columns=headers)
-                except Exception as e:
+                except Exception:
                     st.error("Errore nel caricamento dei dati dal Google Sheet.")
                     return None
 
+# Frasi Target
 target_phrases = [
     {
-        "frase": "Budućnost will win against Noah on July 15, 2025 (Champions League – qualifying round).",
+        "frase": "Apple stock will be higher on October 17, 2025, than on July 22, 2025.",
         "feedback": "We do not know if this statement is true or false."
     },
     {
-        "frase": "Shkëndija will win against The New Saints on July 15, 2025 (Champions League – qualifying round).",
+        "frase": "Alphabet (Google) stock will be higher on September 17, 2025, than on July 21, 2025.",
         "feedback": "We do not know if this statement is true or false."
     }
 ]
 
-
+# Frasi Controllo
 control_phrases = [
     {
-        "frase": "Budućnost will lose against Noah on July 15, 2025 (Champions League – qualifying round).",
+        "frase": "Apple stock will be lower on October 17, 2025, than on July 22, 2025.",
         "feedback": "We do not know if this statement is true or false."
     },
     {
-        "frase": "Shkëndija will lose against The New Saints on July 15, 2025 (Champions League – qualifying round).",
+        "frase": "Alphabet (Google) stock will be lower on September 17, 2025, than on July 21, 2025.",
         "feedback": "We do not know if this statement is true or false."
     }
 ]
 
-
+# Frasi Test (con etichetta True/False)
 raw_test_phrases = [
-    ("Barcelona won against Real Madrid on August 15, 2023.", False),
-    ("Napoli won against Lazio on January 20, 2024.", True),
-    ("Roma won against Juventus on December 15, 2023.", False),
-    ("Juventus won against Torino on January 5, 2023.", True),
-    ("Manchester City won against Chelsea on October 30, 2023.", False),
-    ("Inter won against Torino on January 20, 2024.", True),
-    ("Manchester City won against Liverpool on August 8, 2023.", False),
-    ("Fiorentina won against Torino on February 8, 2024.", False),
-    ("Manchester United won against Chelsea on December 30, 2023.", True),
-    ("Real Madrid won against Barcelona on June 10, 2023.", False),
-    ("Barcelona won against Atletico Madrid on April 25, 2024.", False),
-    ("Borussia Dortmund won against Leipzig on October 30, 2024.", False),
-    ("PSG won against Lille on July 8, 2023.", True),
-    ("Marseille won against PSG on May 5, 2024.", True),
-    ("Inter won against Fiorentina on April 15, 2023.", False),
-    ("Milan won against Napoli on February 8, 2024.", False),
-    ("Fiorentina won against Bologna on March 15, 2024.", True),
-    ("Napoli won against Fiorentina on June 30, 2023.", False),
-    ("PSG won against Marseille on May 5, 2024.", True),
-    ("Milan won against Napoli on July 8, 2023.", False),
-    ("Liverpool won against Manchester United on December 15, 2023.", False),
-    ("Bayern Munich won against Leipzig on July 25, 2023.", True),
-    ("Napoli won against Lazio on November 10, 2023.", True),
-    ("Chelsea won against Manchester United on October 30, 2023.", False),
-    ("PSG won against Lille on August 15, 2023.", True),
-    ("Bayern Munich won against Leipzig on October 10, 2023.", True),
-    ("Arsenal won against Tottenham on January 10, 2024.", False),
-    ("Inter won against Roma on May 15, 2023.", True),
-    ("Bayern Munich won against Borussia Dortmund on July 30, 2024.", True),
-    ("Chelsea won against Tottenham on August 8, 2024.", False),
+    ("On 15 July 2023, the NVIDIA stock was higher than on 10 June 2023.", True),
+    ("On 10 June 2023, the Alphabet (Google) stock was lower than on 5 May 2023.", False),
+    ("On 20 August 2024, the Netflix stock was lower than on 15 July 2024.", False),
+    ("On 25 April 2023, the Microsoft stock was lower than on 20 March 2023.", False),
+    ("On 20 February 2024, the Tesla stock was lower than on 15 January 2024.", False),
+    ("On 15 July 2023, the Apple stock was higher than on 10 June 2023.", True),
+    ("On 20 August 2023, the Netflix stock was lower than on 15 August 2023.", False),
+    ("On 20 March 2023, the Apple stock was higher than on 15 March 2023.", True),
+    ("On 10 December 2023, the Microsoft stock was lower than on 5 November 2023.", False),
+    ("On 20 August 2023, the Microsoft stock was lower than on 15 July 2023.", False),
+    ("On 15 July 2024, the Apple stock was higher than on 10 June 2024.", True),
+    ("On 5 May 2023, the Meta Platforms stock was higher than on 1 May 2023.", True),
+    ("On 20 August 2024, the Microsoft stock was lower than on 15 August 2024.", False),
+    ("On 25 September 2023, the Amazon stock was higher than on 20 August 2023.", True),
+    ("On 15 January 2024, the Amazon stock was higher than on 10 December 2023.", True),
+    ("On 30 October 2023, the Alphabet (Google) stock was lower than on 25 September 2023.", False),
+    ("On 15 July 2024, the Apple stock was higher than on 10 June 2024.", True),
+    ("On 10 December 2023, the Netflix stock was lower than on 5 November 2023.", False),
+    ("On 20 August 2024, the Microsoft stock was lower than on 15 July 2024.", False),
+    ("On 15 July 2024, the NVIDIA stock was higher than on 10 June 2024.", True),
+    ("On 20 August 2023, the Netflix stock was lower than on 15 July 2023.", False),
+    ("On 15 July 2023, the Apple stock was higher than on 10 June 2023.", True),
+    ("On 5 May 2023, the Amazon stock was higher than on 25 April 2023.", True),
+    ("On 10 June 2023, the Tesla stock was lower than on 5 May 2023.", False),
+    ("On 20 February 2024, the Alphabet (Google) stock was lower than on 15 February 2024.", False),
+    ("On 20 August 2024, the Microsoft stock was lower than on 15 August 2024.", False),
+    ("On 20 March 2023, the Apple stock was higher than on 15 February 2023.", True),
+    ("On 25 September 2023, the Amazon stock was higher than on 20 August 2023.", True),
+    ("On 5 November 2023, the NVIDIA stock was higher than on 30 October 2023.", True),
+    ("On 5 May 2023, the Meta Platforms stock was higher than on 25 April 2023.", True)
 ]
-
-
 
 test_phrases = [{"frase": frase, "corretta": corretta} for frase, corretta in raw_test_phrases]
 
@@ -245,4 +244,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
