@@ -58,14 +58,15 @@ def load_sheet_data(sheet, max_retries=3):
                     st.error("Errore nel caricamento dei dati dal Google Sheet.")
                     return None
 
+
 # Frasi Target
 target_phrases = [
     {
-        "frase": "Apple stock will be higher on October 17, 2025, than on July 22, 2025.",
+        "frase": "On 10 August 2025, the Tesla stock will be lower than on 07 August 2025.",
         "feedback": "We do not know if this statement is true or false."
     },
     {
-        "frase": "Alphabet (Google) stock will be higher on September 17, 2025, than on July 21, 2025.",
+        "frase": "On 09 October 2025, the Amazon stock will be lower than on 10 August 2025.",
         "feedback": "We do not know if this statement is true or false."
     }
 ]
@@ -73,14 +74,15 @@ target_phrases = [
 # Frasi Controllo
 control_phrases = [
     {
-        "frase": "Apple stock will be lower on October 17, 2025, than on July 22, 2025.",
+        "frase": "On 10 August 2025, the Tesla stock will be higher than on 07 August 2025.",
         "feedback": "We do not know if this statement is true or false."
     },
     {
-        "frase": "Alphabet (Google) stock will be lower on September 17, 2025, than on July 21, 2025.",
+        "frase": "On 09 October 2025, the Amazon stock will be higher than on 10 August 2025.",
         "feedback": "We do not know if this statement is true or false."
     }
 ]
+
 
 # Frasi Test (con etichetta True/False)
 raw_test_phrases = [
@@ -244,5 +246,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
