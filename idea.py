@@ -63,11 +63,11 @@ def load_sheet_data(sheet, max_retries=3):
 # Frasi Target
 target_phrases = [
     {
-        "frase": "On 07 October 2025, the Apple stock will be higher than on 13 August 2025.",
+        "frase": "On September 24, 2025, Meta Platforms' stock price will be higher than on August 23, 2025",
         "feedback": "We do not know if this statement is true or false."
     },
     {
-        "frase": "On 17 October 2025, the NVIDIA stock will be higher than on 21 August 2025.",
+        "frase": "On October 17, 2025 Microsoft’s stock price will be higher than on August 24, 2025",
         "feedback": "We do not know if this statement is true or false."
     }
 ]
@@ -75,11 +75,11 @@ target_phrases = [
 # Frasi Controllo
 control_phrases = [
     {
-        "frase": "On 07 October 2025, the Apple stock will be lower than on 13 August 2025.",
+        "frase": "On September 24, 2025, Meta Platforms' stock price will be lower than on August 23, 2025",
         "feedback": "We do not know if this statement is true or false."
     },
     {
-        "frase": "On 17 October 2025, the NVIDIA stock will be lower than on 21 August 2025.",
+        "frase": "On October 17, 2025 Microsoft’s stock price will be higher than on August 24, 2025",
         "feedback": "We do not know if this statement is true or false."
     }
 ]
@@ -248,6 +248,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
