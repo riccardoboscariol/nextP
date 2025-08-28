@@ -59,34 +59,29 @@ def load_sheet_data(sheet, max_retries=3):
                     return None
 
 
-# Frasi Target
-# Frasi Target
+# =========================
+# Frasi Target e Controllo
+# =========================
+
+# Target: Cremonese vincerà
 target_phrases = [
     {
-        "frase": "On September 24, 2025, Meta Platforms' stock price will be higher than on August 23, 2025",
-        "feedback": "We do not know if this statement is true or false."
-    },
-    {
-        "frase": "On October 17, 2025 Microsoft’s stock price will be higher than on August 24, 2025",
+        "frase": "Cremonese will win the match against Sassuolo on August 29, 2025 (Serie A).",
         "feedback": "We do not know if this statement is true or false."
     }
 ]
 
-# Frasi Controllo
+# Controllo: Sassuolo vincerà
 control_phrases = [
     {
-        "frase": "On September 24, 2025, Meta Platforms' stock price will be lower than on August 23, 2025",
-        "feedback": "We do not know if this statement is true or false."
-    },
-    {
-        "frase": "On October 17, 2025 Microsoft’s stock price will be higher than on August 24, 2025",
+        "frase": "Sassuolo will win the match against Cremonese on August 29, 2025 (Serie A).",
         "feedback": "We do not know if this statement is true or false."
     }
 ]
 
-
-
-# Frasi Test (con etichetta True/False)
+# =========================
+# Frasi Test (True/False)
+# =========================
 raw_test_phrases = [
     ("On 15 July 2023, the NVIDIA stock was higher than on 10 June 2023.", True),
     ("On 10 June 2023, the Alphabet (Google) stock was lower than on 5 May 2023.", False),
@@ -248,6 +243,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
