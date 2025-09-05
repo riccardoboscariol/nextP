@@ -8,7 +8,7 @@ import time
 from datetime import datetime
 import pandas as pd
 
-# Inizializzazione e autenticazione Google Sheets
+# Funzione per l'inizializzazione e autenticazione di Google Sheets con riprova
 def init_google_sheet(max_retries=3):
     scope = [
         "https://spreadsheets.google.com/feeds",
@@ -27,7 +27,7 @@ def init_google_sheet(max_retries=3):
     for attempt in range(max_retries):
         try:
             return client.open("Dati Partecipanti").sheet1
-        except APIError:
+        except APIError as e:
             if attempt < max_retries - 1:
                 st.warning(f"Errore di connessione. Riprova ({attempt + 1}/{max_retries})...")
                 time.sleep(2)
@@ -54,34 +54,34 @@ def load_sheet_data(sheet, max_retries=3):
                     headers = rows[0]
                     data = rows[1:]
                     return pd.DataFrame(data, columns=headers)
-                except Exception:
+                except Exception as e:
                     st.error("Errore nel caricamento dei dati dal Google Sheet.")
                     return None
 
-
-# =========================
-# Frasi Target e Controllo
-# =========================
-
-# Target: Cremonese vincerà
 target_phrases = [
     {
-        "frase": "Cremonese will win the match against Sassuolo on August 29, 2025 (Serie A).",
+        "frase": "On October 19, 2025, Alphabet (Google)’s stock price will be higher than on September 7, 2025",
+        "feedback": "We do not know if this statement is true or false."
+    },
+    {
+        "frase": "On October 9, 2025, Tesla’s stock price will be higher than on September 6, 2025",
         "feedback": "We do not know if this statement is true or false."
     }
 ]
 
-# Controllo: Sassuolo vincerà
 control_phrases = [
     {
-        "frase": "Sassuolo will win the match against Cremonese on August 29, 2025 (Serie A).",
+        "frase": "On October 19, 2025, Alphabet (Google)’s stock price will be lower than on September 7, 2025",
+        "feedback": "We do not know if this statement is true or false."
+    },
+    {
+        "frase": "On October 9, 2025, Tesla’s stock price will be lower than on September 6, 2025",
         "feedback": "We do not know if this statement is true or false."
     }
 ]
 
-# =========================
-# Frasi Test (True/False)
-# =========================
+
+
 raw_test_phrases = [
     ("On 15 July 2023, the NVIDIA stock was higher than on 10 June 2023.", True),
     ("On 10 June 2023, the Alphabet (Google) stock was lower than on 5 May 2023.", False),
@@ -112,10 +112,13 @@ raw_test_phrases = [
     ("On 20 March 2023, the Apple stock was higher than on 15 February 2023.", True),
     ("On 25 September 2023, the Amazon stock was higher than on 20 August 2023.", True),
     ("On 5 November 2023, the NVIDIA stock was higher than on 30 October 2023.", True),
-    ("On 5 May 2023, the Meta Platforms stock was higher than on 25 April 2023.", True)
+    ("On 5 May 2023, the Meta Platforms stock was higher than on 25 April 2023.", True),
 ]
 
-test_phrases = [{"frase": frase, "corretta": corretta} for frase, corretta in raw_test_phrases]
+
+test_phrases = [
+    {"frase": frase, "corretta": corretta} for frase, corretta in raw_test_phrases
+]
 
 def save_all_responses(participant_id, email, all_responses, completed=True):
     sheet = st.session_state.sheet
@@ -229,11 +232,12 @@ def main():
             ):
                 st.write("Test completed!")
                 st.write(f"Correct answers (test): {st.session_state.total_correct} out of {len(test_phrases)}")
-
+                
+                # Calcolo tempo impiegato
                 time_spent = datetime.now() - st.session_state.start_time
                 minutes, seconds = divmod(time_spent.total_seconds(), 60)
                 st.write(f"Time spent: {int(minutes)} minutes and {int(seconds)} seconds")
-
+                
                 st.stop()
             else:
                 st.error("Error saving data. Please try again.")
